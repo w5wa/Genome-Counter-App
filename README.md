@@ -27,7 +27,7 @@ The project is architected for seamless web deployment:
 Genome-Counter-App/
 │
 ├── newapp.py           # Core application & Web Dashboard
-├── Requirements.txt    # Platform dependencies
+├── requirements.txt    # Platform dependencies
 └── README.md           # Documentation (This file)
 
 🛠️ Installation & Deployment

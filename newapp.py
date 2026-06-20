@@ -1,9 +1,15 @@
 import os
+import socket
 import subprocess
 import sys
+import time
 import webbrowser
 
 import streamlit as st
+
+DEFAULT_STREAMLIT_PORT = 8501
+SERVER_STARTUP_TIMEOUT_SECONDS = 15
+SERVER_RETRY_INTERVAL_SECONDS = 0.25
 
 GENETIC_CODE = {
     'UUU': 'Phenylalanine', 'UUC': 'Phenylalanine',
@@ -95,17 +101,28 @@ def calculate_codon_usage(sequence):
 
 def launch_streamlit_in_browser():
     app_path = os.path.abspath(__file__)
-    subprocess.Popen(
-        [sys.executable, "-m", "streamlit", "run", app_path, "--server.headless=false"],
+    launch_port = DEFAULT_STREAMLIT_PORT
+    process = subprocess.Popen(
+        [sys.executable, "-m", "streamlit", "run", app_path, f"--server.port={launch_port}"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )
-    webbrowser.open_new_tab("http://localhost:8501")
+    deadline = time.time() + SERVER_STARTUP_TIMEOUT_SECONDS
+    while time.time() < deadline:
+        exit_code = process.poll()
+        if exit_code is not None:
+            print(f"Streamlit exited early with status code {exit_code}.", file=sys.stderr)
+            break
+        try:
+            with socket.create_connection(("127.0.0.1", launch_port), timeout=1):
+                webbrowser.open_new_tab(f"http://localhost:{launch_port}")
+                return True
+        except OSError:
+            time.sleep(SERVER_RETRY_INTERVAL_SECONDS)
 
-def run_dashboard():
-    st.set_page_config(page_title="Advanced Genomics Dashboard", layout="centered")
-    st.title("🧬 Advanced Genomics & Bioinformatics Toolkit")
-    st.markdown("---")
+    if process.poll() is None:
+        process.terminate()
+    return False
 
 def calculate_molecular_weight(sequence):
     sequence = sequence.upper()
@@ -150,6 +167,10 @@ def calculate_purine_pyrimidine_skew(sequence):
         return 0.0, 0.0
     return (purines / total) * 100, (pyrimidines / total) * 100
 
+def run_dashboard():
+    st.set_page_config(page_title="Advanced Genomics Dashboard", layout="centered")
+    st.title("🧬 Advanced Genomics & Bioinformatics Toolkit")
+    st.markdown("---")
     st.caption("Tip: run `python newapp.py --browser` to auto-launch in your browser.")
 
     user_input = st.text_area("Enter raw DNA Sequence (A, T, C, G only):", height=150)
@@ -254,6 +275,8 @@ def calculate_purine_pyrimidine_skew(sequence):
 
 if __name__ == "__main__":
     if "--browser" in sys.argv:
-        launch_streamlit_in_browser()
+        if not launch_streamlit_in_browser():
+            print("Failed to start Streamlit server for browser launch.", file=sys.stderr)
+            sys.exit(1)
     else:
         run_dashboard()
