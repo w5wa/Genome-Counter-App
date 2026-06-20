@@ -1,5 +1,33 @@
+import os
+import subprocess
+import sys
+import webbrowser
+
 import streamlit as st
-import math
+
+GENETIC_CODE = {
+    'UUU': 'Phenylalanine', 'UUC': 'Phenylalanine',
+    'UUA': 'Leucine', 'UUG': 'Leucine', 'CUU': 'Leucine', 'CUC': 'Leucine', 'CUA': 'Leucine', 'CUG': 'Leucine',
+    'AUU': 'Isoleucine', 'AUC': 'Isoleucine', 'AUA': 'Isoleucine',
+    'AUG': 'Methionine (START)',
+    'GUU': 'Valine', 'GUC': 'Valine', 'GUA': 'Valine', 'GUG': 'Valine',
+    'UCU': 'Serine', 'UCC': 'Serine', 'UCA': 'Serine', 'UCG': 'Serine', 'AGU': 'Serine', 'AGC': 'Serine',
+    'CCU': 'Proline', 'CCC': 'Proline', 'CCA': 'Proline', 'CCG': 'Proline',
+    'ACU': 'Threonine', 'ACC': 'Threonine', 'ACA': 'Threonine', 'ACG': 'Threonine',
+    'GCU': 'Alanine', 'GCC': 'Alanine', 'GCA': 'Alanine', 'GCG': 'Alanine',
+    'UAU': 'Tyrosine', 'UAC': 'Tyrosine',
+    'UAA': 'STOP', 'UAG': 'STOP', 'UGA': 'STOP',
+    'CAU': 'Histidine', 'CAC': 'Histidine',
+    'CAA': 'Glutamine', 'CAG': 'Glutamine',
+    'AAU': 'Asparagine', 'AAC': 'Asparagine',
+    'AAA': 'Lysine', 'AAG': 'Lysine',
+    'GAU': 'Aspartic Acid', 'GAC': 'Aspartic Acid',
+    'GAA': 'Glutamic Acid', 'GAG': 'Glutamic Acid',
+    'UGU': 'Cysteine', 'UGC': 'Cysteine',
+    'UGG': 'Tryptophan',
+    'CGU': 'Arginine', 'CGC': 'Arginine', 'CGA': 'Arginine', 'CGG': 'Arginine', 'AGA': 'Arginine', 'AGG': 'Arginine',
+    'GGU': 'Glycine', 'GGC': 'Glycine', 'GGA': 'Glycine', 'GGG': 'Glycine'
+}
 
 def validate_dna(sequence):
     sequence = sequence.upper()
@@ -48,23 +76,36 @@ def transcribe_dna_to_mrna(sequence):
 
 def translate_mrna_to_protein(mrna_sequence):
     mrna_sequence = mrna_sequence.upper()
-    genetic_code = {
-        'AUG': 'Methionine (START)', 'UUU': 'Phenylalanine', 'UUC': 'Phenylalanine',
-        'UUA': 'Leucine', 'UUG': 'Leucine', 'CUU': 'Leucine', 'CUC': 'Leucine',
-        'CUA': 'Leucine', 'CUG': 'Leucine', 'AUU': 'Isoleucine', 'AUC': 'Isoleucine',
-        'AUA': 'Isoleucine', 'GUU': 'Valine', 'GUC': 'Valine', 'GUA': 'Valine',
-        'GUG': 'Valine', 'GCU': 'Alanine', 'GCC': 'Alanine', 'GCA': 'Alanine',
-        'GCG': 'Alanine', 'UGU': 'Cysteine', 'UGC': 'Cysteine', 'UAA': 'STOP',
-        'UAG': 'STOP', 'UGA': 'STOP'
-    }
     protein_sequence = []
     for i in range(0, len(mrna_sequence) - 2, 3):
         codon = mrna_sequence[i:i+3]
-        amino_acid = genetic_code.get(codon, "Unknown")
+        amino_acid = GENETIC_CODE.get(codon, "Unknown")
         protein_sequence.append(amino_acid)
         if amino_acid == "STOP":
             break
     return " -> ".join(protein_sequence)
+
+def calculate_codon_usage(sequence):
+    mrna_sequence = transcribe_dna_to_mrna(sequence)
+    usage = {}
+    for i in range(0, len(mrna_sequence) - 2, 3):
+        codon = mrna_sequence[i:i+3]
+        usage[codon] = usage.get(codon, 0) + 1
+    return sorted(usage.items(), key=lambda item: (-item[1], item[0]))
+
+def launch_streamlit_in_browser():
+    app_path = os.path.abspath(__file__)
+    subprocess.Popen(
+        [sys.executable, "-m", "streamlit", "run", app_path, "--server.headless=false"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+    webbrowser.open_new_tab("http://localhost:8501")
+
+def run_dashboard():
+    st.set_page_config(page_title="Advanced Genomics Dashboard", layout="centered")
+    st.title("🧬 Advanced Genomics & Bioinformatics Toolkit")
+    st.markdown("---")
 
 def calculate_molecular_weight(sequence):
     sequence = sequence.upper()
@@ -109,11 +150,8 @@ def calculate_purine_pyrimidine_skew(sequence):
         return 0.0, 0.0
     return (purines / total) * 100, (pyrimidines / total) * 100
 
-if __name__ == "__main__":
-    st.set_page_config(page_title="Advanced Genomics Dashboard", layout="centered")
-    st.title("🧬 Advanced Genomics & Bioinformatics Toolkit")
-    st.markdown("---")
-    
+    st.caption("Tip: run `python newapp.py --browser` to auto-launch in your browser.")
+
     user_input = st.text_area("Enter raw DNA Sequence (A, T, C, G only):", height=150)
     user_input = user_input.strip().replace(" ", "").replace("\n", "")
     
@@ -127,7 +165,9 @@ if __name__ == "__main__":
         "7. Locate CpG Islands (Regulatory Regions)",
         "8. Calculate Primer Melting Temperature (Tm)",
         "9. Generate Reverse Complement Strand",
-        "10. Purine vs Pyrimidine Skew Analysis"
+        "10. Purine vs Pyrimidine Skew Analysis",
+        "11. Codon Usage Frequency Analysis",
+        "12. Display Full Genetic Code Table (64 Codons)"
     ]
     
     selected_task = st.selectbox("Select Bioinformatics Analysis Task:", tasks)
@@ -200,3 +240,20 @@ if __name__ == "__main__":
                 col1, col2 = st.columns(2)
                 col1.metric("Purines Ratio (A + G)", f"{pur:.2f}%")
                 col2.metric("Pyrimidines Ratio (T + C)", f"{pyr:.2f}%")
+            
+            elif selected_task.startswith("11."):
+                codon_usage = calculate_codon_usage(user_input)
+                st.write(f"Detected codon count: **{sum(count for _, count in codon_usage)}**")
+                if codon_usage:
+                    rows = [{"Codon (mRNA)": codon, "Amino Acid": GENETIC_CODE.get(codon, "Unknown"), "Count": count} for codon, count in codon_usage]
+                    st.dataframe(rows, use_container_width=True)
+            
+            elif selected_task.startswith("12."):
+                full_code_rows = [{"Codon (mRNA)": codon, "Amino Acid": amino_acid} for codon, amino_acid in sorted(GENETIC_CODE.items())]
+                st.dataframe(full_code_rows, use_container_width=True)
+
+if __name__ == "__main__":
+    if "--browser" in sys.argv:
+        launch_streamlit_in_browser()
+    else:
+        run_dashboard()

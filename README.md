@@ -15,6 +15,7 @@ The platform streamlines complex genomic workflows by providing a centralized da
 * **Structural Metrics:** GC content analysis, molecular weight estimation, and melting temperature ($T_m$) calculations for PCR primers.
 * **Genomic Transformations:** Rapid generation of complementary and reverse-complementary DNA strands.
 * **Central Dogma Simulation:** Transcription of DNA to mRNA and translation into functional amino acid (peptide) chains.
+* **Gene Code Toolkit:** Full 64-codon genetic code table and codon-usage frequency analysis.
 * **Regulatory Region Identification:** Detection of CpG islands and analysis of Purine vs. Pyrimidine skew for regulatory region mapping.
 
 ---
@@ -23,10 +24,10 @@ The platform streamlines complex genomic workflows by providing a centralized da
 The project is architected for seamless web deployment:
 
 ```text
-Genomics_Platform/
+Genome-Counter-App/
 │
-├── app.py              # Core application & Web Dashboard
-├── requirements.txt    # Platform dependencies
+├── newapp.py           # Core application & Web Dashboard
+├── Requirements.txt    # Platform dependencies
 └── README.md           # Documentation (This file)
 
 🛠️ Installation & Deployment
@@ -48,11 +49,17 @@ Then, install the dependencies using your terminal:
 Bash
 pip install -r requirements.txt
 Step 3: Launch the Online Platform
-Start the application server to host the web interface:
+Start the application server to host the web interface in your browser:
 
 Bash
-streamlit run app.py
+streamlit run newapp.py
 The application will launch a local web server, and you can access the interface via your browser.
+
+Alternative browser launcher:
+
+```bash
+python newapp.py --browser
+```
 
 🔬 Scientific Standards & Validation
 Data Integrity: The platform implements strict input validation to ensure only valid DNA nucleotides (A, T, C, G) are processed.
